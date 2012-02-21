@@ -29,6 +29,7 @@ class Word extends ZipArchive{
         "word/fontTable.xml",
         "word/settings.xml",
         "word/styles.xml",
+        "word/stylesWithEffects.xml",
         "word/webSettings.xml",
         "_rels/.rels",
         "docProps/app.xml",
@@ -54,7 +55,7 @@ class Word extends ZipArchive{
     }
 
     // Упаковываем архив
-    public function __destruct(){
+    public function create(){
 
       // Добавляем содержимое
       $this->addFromString("word/document.xml", str_replace( '{CONTENT}', $this->content, file_get_contents( $this->path . "word/document.xml" ) ) );
