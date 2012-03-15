@@ -19,7 +19,7 @@ error_reporting( E_ALL | E_NOTICE );
 include 'PHPDocx_0.9.2.php';
 
 // Создаем и пишем в файл. Деструктор закрывает
-$w = new WordDocument( "Пример.docx" );
+$w = new WordDocument( "example.docx" );
 
 // Использование метода assign
 /******************************

@@ -15,9 +15,6 @@
 // Общий класс для создания генераторов MS Office документов
 class OfficeDocument extends ZipArchive{
 
-    // Файлы для включения в архив
-    protected $files;
-
     // Путь к шаблону
     protected $path;
 
@@ -35,26 +32,23 @@ class OfficeDocument extends ZipArchive{
       // Путь к шаблону
       $this->path = dirname(__FILE__) . $template_path;
 
-      // Если Вы на windows - имена файлов должны быть под windows-1251
-      $filename = iconv( 'utf-8', 'windows-1251', $filename );
-
       // Если не получилось открыть файл, то жизнь бессмысленна.
       if ( $this->open( $filename, ZIPARCHIVE::CREATE) !== TRUE) {
         die("Unable to open <$filename>\n");
       }
 
       // Описываем связи для документа MS Office
-      $this->rels = array_merge(array(
+      $this->rels = array_merge( $this->rels, array(
         'rId3' => array(
           'http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties',
           'docProps/app.xml' ),
         'rId2' => array(
           'http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties',
           'docProps/core.xml' ),
-        'rId1' => array(
-          'http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument',
-          'word/document.xml' ),
-      ), $this->rels );
+      ) );
+
+      // Добавляем типы данных
+      $this->addFile($this->path . "[Content_Types].xml" , "[Content_Types].xml" );
     }
 
     // Генерация зависимостей
@@ -83,24 +77,9 @@ class OfficeDocument extends ZipArchive{
       $this->addFromString( $path . $filename, $xmlstring );
     }
 
-    public function pparse( $replace, $content ){
+    protected function pparse( $replace, $content ){
 
       return str_replace( array_keys( $replace ), array_values( $replace ), $content );
-    }
-
-    // Упаковываем архив
-    public function create(){
-
-      // Добавляем типы данных
-      $this->addFile($this->path . "[Content_Types].xml" , "[Content_Types].xml" );
-
-      // Добавляем связанные документы MS Office
-      $this->add_rels( "_rels/.rels", $this->rels );
-
-      // Добавляем содержимое
-      $this->addFromString("word/document.xml", str_replace( '{CONTENT}', $this->content, file_get_contents( $this->path . "word/document.xml" ) ) );
-
-      $this->close();
     }
 }
 
@@ -140,7 +119,6 @@ class WordDocument extends OfficeDocument{
       );
     }
 
-    // Регистрируем текст
     public function assign( $content = '', $return = false ){
 
       // Проверяем, является ли $text файлом. Если да, то подключаем изображение
@@ -186,10 +164,18 @@ class WordDocument extends OfficeDocument{
     // Упаковываем архив
     public function create(){
 
+      $this->rels['rId1'] = array(
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument', 'word/document.xml' );
+
+      // Добавляем связанные документы MS Office
+      $this->add_rels( "_rels/.rels", $this->rels );
+
       // Добавляем связанные документы MS Office Word
       $this->add_rels( "_rels/document.xml.rels", $this->word_rels, 'word/' );
 
-      // Упаковываем связи с документами
-      parent::create();
+      // Добавляем содержимое
+      $this->addFromString("word/document.xml", str_replace( '{CONTENT}', $this->content, file_get_contents( $this->path . "word/document.xml" ) ) );
+
+      $this->close();
     }
 }
